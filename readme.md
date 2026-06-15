@@ -1,217 +1,389 @@
+
 # LangGraph Chatbot
 
-A production-style AI chat application built from scratch — ChatGPT-style thread management, real-time token streaming, and persistent conversation memory using LangGraph.
+<p align="center">
+  <img src="./docs/B254E03D-4E0F-486E-ACCF-83E4154F3BE3.png" alt="LangGraph Chatbot Architecture" width="100%" />
+</p>
 
-**Stack:** FastAPI · PostgreSQL · Async SQLAlchemy · Alembic · JWT Auth · LangGraph · OpenAI · SSE · Next.js · TypeScript
+<p align="center">
+  <strong>Production-style AI Chat Application built with FastAPI, LangGraph, PostgreSQL and Next.js</strong>
+</p>
+
+<p align="center">
+  ChatGPT-style Threads • Persistent Memory • Tool Calling • SSE Streaming • Real-Time UI
+</p>
+
+---
+
+## Overview
+
+A full-stack AI chatbot built from scratch to understand how production conversational AI systems work under the hood.
+
+Unlike simple LLM wrappers, this project includes:
+
+- Thread-based conversations
+- Persistent chat history
+- LangGraph memory via checkpoints
+- Real-time token streaming
+- Tool execution tracking
+- JWT authentication
+- PostgreSQL persistence
+- Modern Next.js chat interface
+
+---
+
+## Tech Stack
+
+### Backend
+
+- FastAPI
+- LangGraph
+- OpenAI
+- PostgreSQL
+- Async SQLAlchemy
+- Alembic
+- JWT Authentication
+- Server-Sent Events (SSE)
+
+### Frontend
+
+- Next.js 15
+- React
+- TypeScript
+- TailwindCSS
+- React Markdown
+- Streaming UI
 
 ---
 
 ## Architecture
 
-```
-chatbot-backend/     → FastAPI + LangGraph + PostgreSQL
-chatbot-frontend/    → Next.js + TypeScript + Tailwind
-```
+```text
+                    ┌─────────────────┐
+                    │     Next.js     │
+                    │  Streaming UI   │
+                    └────────┬────────┘
+                             │
+                             │ SSE
+                             ▼
+                    ┌─────────────────┐
+                    │     FastAPI     │
+                    │  Chat Backend   │
+                    └────────┬────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          ▼                  ▼                  ▼
 
-### Request flow
-
-```
-React Frontend
-      ↓
-POST /chat/stream
-      ↓
-FastAPI StreamingResponse
-      ↓
-LangGraph astream()
-      ↓
-Token streaming via SSE
-      ↓
-UI updates live
-```
-
-### Database schema
-
-```
-users
- └── threads (UUID-based, user-owned)
-        └── messages (role + status enums, timestamp tracking)
-```
-
-### Conversation memory
-
-```
-Thread ID
-     ↓
-LangGraph Checkpointer
-     ↓
-Conversation history loaded
-     ↓
-Context-aware OpenAI response
-```
+ ┌──────────────┐  ┌────────────────┐  ┌──────────────┐
+ │ JWT Auth     │  │ LangGraph      │  │ PostgreSQL   │
+ │ Middleware   │  │ StateGraph     │  │ Threads      │
+ └──────────────┘  └───────┬────────┘  │ Messages     │
+                            │           └──────────────┘
+                            ▼
+                  ┌──────────────────┐
+                  │ Tool Execution   │
+                  │ Weather / Future │
+                  │ RAG / SQL Tools  │
+                  └─────────┬─────────┘
+                            │
+                            ▼
+                  ┌──────────────────┐
+                  │ Checkpointer     │
+                  │ Conversation Mem │
+                  └──────────────────┘
+````
 
 ---
 
 ## Features
 
-- **JWT Authentication** — register, login, protected routes, current user dependency
-- **Thread management** — create, list, and retrieve ChatGPT-style conversation threads
-- **Message persistence** — full message history with roles (`USER`, `ASSISTANT`, `SYSTEM`, `TOOL`) and statuses (`PENDING`, `COMPLETED`, `FAILED`)
-- **LangGraph integration** — StateGraph with OpenAI, HumanMessage handling, thread-aware invocation
-- **Real-time streaming** — SSE via `FastAPI StreamingResponse` + `LangGraph astream()`
-- **Conversation memory** — per-thread context retention via LangGraph checkpointer
-- **Next.js frontend** — streaming assistant bubble, optimistic updates, thread sidebar
+### Authentication
+
+* User Registration
+* Login
+* JWT Authentication
+* Protected Routes
+* Current User Dependency
+
+### Chat Threads
+
+* ChatGPT-style Thread Management
+* Create Conversations
+* Fetch Conversation History
+* Thread-Based Context Retention
+
+### Messages
+
+* USER Messages
+* ASSISTANT Messages
+* TOOL Messages
+* SYSTEM Messages
+
+### LangGraph
+
+* StateGraph Integration
+* Checkpoint-Based Memory
+* Thread-Aware Context
+* OpenAI Integration
+* Tool Calling Support
+
+### Real-Time Streaming
+
+* Server-Sent Events (SSE)
+* Token-by-Token Streaming
+* Optimistic UI Updates
+* Markdown Rendering During Streaming
+* Tool Execution Events
+
+### Tool Execution Tracking
+
+```text
+🔍 Querying Database...
+✓ SQL Query Executed
+
+Assistant: You have 42 messages.
+```
+
+Supported event types:
+
+```text
+tool_start
+tool_end
+done
+```
 
 ---
 
-## Getting started
+## Database Schema
 
-### Prerequisites
+```text
+users
+│
+└── threads
+     │
+     └── messages
+```
 
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL
+### Users
+
+```text
+id
+name
+email
+password
+created_at
+```
+
+### Threads
+
+```text
+thread_id (UUID)
+title
+user_id
+created_at
+updated_at
+```
+
+### Messages
+
+```text
+message_id (UUID)
+thread_id
+content
+role
+status
+created_at
+updated_at
+```
+
+### Enums
+
+#### MessageRole
+
+```text
+USER
+ASSISTANT
+SYSTEM
+TOOL
+```
+
+#### MessageStatus
+
+```text
+PENDING
+COMPLETED
+FAILED
+```
 
 ---
 
-### Backend setup
+## Conversation Memory
+
+Each thread acts as an independent conversation.
+
+```text
+Thread ID
+      │
+      ▼
+LangGraph Checkpointer
+      │
+      ▼
+Previous Messages
+      │
+      ▼
+Context-Aware Response
+```
+
+This allows conversations to continue naturally without manually sending the full history from the frontend.
+
+---
+
+## Streaming Flow
+
+```text
+User Message
+      │
+      ▼
+POST /chat/stream
+      │
+      ▼
+LangGraph astream_events()
+      │
+      ▼
+Tool Events
+      │
+      ▼
+Token Streaming
+      │
+      ▼
+SSE Response
+      │
+      ▼
+Live UI Updates
+```
+
+---
+
+## Engineering Challenges Solved
+
+### SSE Markdown Corruption
+
+One of the most interesting bugs encountered during development involved markdown tables rendering incorrectly while streaming.
+
+The issue was caused by streaming raw tokens directly through SSE:
+
+```python
+yield f"data: {token}\n\n"
+```
+
+Newline characters inside tokens were interpreted by the SSE protocol as message boundaries.
+
+The solution:
+
+```python
+yield f"data: {json.dumps(token)}\n\n"
+```
+
+And decoding on the frontend:
+
+```typescript
+const token = JSON.parse(data)
+```
+
+This preserved markdown formatting during streaming and enabled proper rendering of:
+
+* Tables
+* Lists
+* Code Blocks
+* Headings
+
+---
+
+## Getting Started
+
+### Backend
 
 ```bash
 cd chatbot-backend
 
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+uv venv
+source .venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
-# Configure environment
-cp .env.example .env
-```
-
-Fill in your `.env`:
-
-```env
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/chatbot
-SECRET_KEY=your-secret-key
-OPENAI_API_KEY=your-openai-api-key
-```
-
-```bash
-# Run migrations
 alembic upgrade head
 
-# Start the server
 uvicorn app.main:app --reload
 ```
 
-API will be running at `http://localhost:8000`. Docs at `http://localhost:8000/docs`.
-
 ---
 
-### Frontend setup
+### Frontend
 
 ```bash
 cd chatbot-frontend
 
-# Install dependencies
 npm install
 
-# Configure environment
-cp .env.example .env.local
-```
-
-Fill in your `.env.local`:
-
-```env
-NEXT_PUBLIC_BASE_URL=http://localhost:8000
-```
-
-```bash
 npm run dev
 ```
 
-Frontend will be running at `http://localhost:3000`.
+---
+
+## API Endpoints
+
+| Method | Endpoint                | Description     |
+| ------ | ----------------------- | --------------- |
+| POST   | `/auth/register`        | Register User   |
+| POST   | `/auth/login`           | Login User      |
+| GET    | `/auth/me`              | Current User    |
+| POST   | `/threads`              | Create Thread   |
+| GET    | `/threads`              | List Threads    |
+| GET    | `/threads/{id}`         | Get Thread      |
+| GET    | `/messages/{thread_id}` | Thread Messages |
+| POST   | `/chat/stream`          | Streaming Chat  |
 
 ---
 
-## API reference
+## Current Roadmap
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/auth/register` | Register a new user | No |
-| `POST` | `/auth/login` | Login, returns JWT | No |
-| `GET` | `/auth/me` | Get current user | Yes |
-| `POST` | `/threads` | Create a new thread | Yes |
-| `GET` | `/threads` | List all user threads | Yes |
-| `GET` | `/threads/:id` | Get thread with messages | Yes |
-| `POST` | `/chat/stream` | Stream a chat response (SSE) | Yes |
+### ✅ Completed
 
----
+* JWT Authentication
+* Thread Management
+* Message Persistence
+* LangGraph Integration
+* Checkpoint Memory
+* SSE Streaming
+* Markdown Rendering
+* Tool Events
+* Next.js Frontend
 
-## Project structure
+### 🚧 In Progress
 
-```
-chatbot-backend/
-├── app/
-│   ├── ai/
-│   │   ├── graph.py          # LangGraph StateGraph definition
-│   │   └── checkpointer.py   # Conversation memory setup
-│   ├── api/
-│   │   ├── auth.py           # Register, login, JWT endpoints
-│   │   ├── threads.py        # Thread CRUD
-│   │   └── chat.py           # Streaming chat endpoint
-│   ├── database/
-│   │   ├── models/           # SQLAlchemy models
-│   │   └── enums/            # MessageRole, MessageStatus
-│   ├── schema/               # Pydantic request/response schemas
-│   ├── services/             # Business logic layer
-│   └── main.py
-├── alembic/                  # Database migrations
-└── requirements.txt
+* Document Uploads
+* RAG Pipeline
+* Retriever Tool
+* Vector Database Integration
 
-chatbot-frontend/
-├── src/
-│   ├── app/
-│   │   ├── chat/             # Chat page + thread routing
-│   │   └── threads/[id]/     # Thread detail page
-│   ├── components/
-│   │   ├── chat-container.tsx
-│   │   ├── message-box.tsx   # Markdown rendering + streaming UI
-│   │   └── chat-input.tsx
-│   └── services/
-│       └── chat/chat.api.ts  # SSE streaming client
-```
+### 🔮 Planned
 
----
-
-## What I learned building this
-
-- Async SQLAlchemy session management and common pitfalls
-- Alembic migrations with PostgreSQL enum types
-- LangGraph `astream()` with `stream_mode=["messages"]`
-- Checkpointer configuration for per-thread memory
-- SSE event parsing (`event:` vs `data:` fields)
-- JWT middleware with FastAPI dependencies
-- Pydantic v2 serialization with SQLAlchemy relationships
-
----
-
-## Roadmap
-
-- [ ] RAG pipeline with vector store integration
-- [ ] Tool-calling agents (web search, code execution)
-- [ ] Multi-agent workflows with LangGraph
-- [ ] File/image upload support
-- [ ] Docker + deployment config
+* SQL Agent
+* Multi-Agent Workflows
+* Celery + Redis
+* Background Processing
+* Docker Deployment
 
 ---
 
 ## Author
 
-**Priyansh Gupta** — Software Engineer learning AI Engineering
+**Priyansh Gupta**
 
-[GitHub](https://github.com/PriyanshGupta2002) · [LinkedIn](https://linkedin.com/in/priyansh-gupta)
+Software Engineer → AI Engineer
+
+* GitHub: https://github.com/PriyanshGupta2002
+* LinkedIn: https://linkedin.com/in/priyansh-gupta
 
 ---
 
