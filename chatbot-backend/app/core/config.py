@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     ALEMBIC_DATABASE_URL: str
     OPENROUTER_API_KEY: str
     CHECKPOINT_DB_URL: str
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 1440
+    WEATHER_API_KEY: str
 
     class Config:
         env_file = ".env"

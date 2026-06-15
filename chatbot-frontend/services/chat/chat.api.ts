@@ -7,6 +7,8 @@ export async function streamChat(
   onChunk: (chunk: string) => void,
   onDone?: () => void,
   onError?: (err: unknown) => void,
+  onToolStart?: (tool: string) => void,
+  onToolEnd?: (tool: string) => void,
 ) {
   let isDone = false;
   const safeDone = () => {
@@ -61,33 +63,59 @@ export async function streamChat(
       for (const part of parts) {
         lastEventType = "";
 
-        for (const line of part.split("\n").map((l) => l.trim())) {
-          if (!line) continue;
+        for (const line of part.split("\n")) {
+          if (line === "") continue;
 
           // ✅ Handle SSE event type line
           if (line.startsWith("event:")) {
             lastEventType = line.replace(/^event:\s?/, "").trim();
+
             continue;
           }
 
           if (line.startsWith("data:")) {
             const data = line.replace(/^data:\s?/, "");
 
-            // ✅ Trigger done on event:done or data:[DONE]
             if (lastEventType === "done" || data === "[DONE]") {
               safeDone();
               continue;
             }
 
-            // Skip non-chunk data values
+            if (lastEventType === "tool_start") {
+              try {
+                const parsed = JSON.parse(data);
+                onToolStart?.(parsed.tool);
+              } catch {}
+              continue;
+            }
+
+            if (lastEventType === "tool_end") {
+              try {
+                const parsed = JSON.parse(data);
+                onToolEnd?.(parsed.tool);
+              } catch {}
+              continue;
+            }
+
             if (data === "complete" || data === "") continue;
 
             try {
               const parsed = JSON.parse(data);
-              if (typeof parsed === "string") onChunk(parsed);
-              else if (parsed?.delta) onChunk(String(parsed.delta));
-              else if (parsed?.content) onChunk(String(parsed.content));
-              else onChunk(JSON.stringify(parsed));
+
+              if (typeof parsed === "string") {
+                onChunk(parsed);
+                continue;
+              }
+
+              if (parsed?.delta) {
+                onChunk(String(parsed.delta));
+                continue;
+              }
+
+              if (parsed?.content) {
+                onChunk(String(parsed.content));
+                continue;
+              }
             } catch {
               onChunk(data);
             }

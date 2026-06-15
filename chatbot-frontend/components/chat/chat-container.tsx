@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import MessageBox from "./message-box";
 import ChatInput from "./chat-input";
-import { MessageResponse } from "@/types/thread.types";
+import { MessageResponse, ToolEvent } from "@/types/thread.types";
 import { streamChat } from "@/services/chat/chat.api";
 
 function genId(prefix = "msg") {
@@ -15,6 +15,11 @@ interface ChatContainerProps {
   initialMessages?: MessageResponse[];
   initialPrompt?: string | null;
 }
+const TOOL_LABELS: Record<string, string> = {
+  sql_db_query: "Querying Database",
+  retrieve_documents: "Searching Documents",
+  tavily_search: "Searching Web",
+};
 
 const ChatContainer = ({
   threadId,
@@ -24,6 +29,7 @@ const ChatContainer = ({
   const [messages, setMessages] = useState<MessageResponse[]>(
     initialMessages ?? [],
   );
+  const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
   const [isSending, setIsSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const initialSentRef = useRef(false);
@@ -34,6 +40,7 @@ const ChatContainer = ({
 
   const handleSend = React.useCallback(
     async (text: string) => {
+      setToolEvents([]);
       const userMsg: MessageResponse = {
         message_id: genId("user"),
         content: text,
@@ -62,36 +69,83 @@ const ChatContainer = ({
 
       try {
         await streamChat(
-          { thread_id: threadId ?? null, message: text },
+          {
+            thread_id: threadId ?? null,
+            message: text,
+          },
+
+          // token stream
           (chunk) => {
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.message_id === assistantId
-                  ? { ...msg, content: msg.content + chunk }
+                  ? {
+                      ...msg,
+                      content: msg.content + chunk,
+                    }
                   : msg,
               ),
             );
           },
+
+          // done
           () => {
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.message_id === assistantId
-                  ? { ...msg, status: "completed" }
+                  ? {
+                      ...msg,
+                      status: "completed",
+                    }
                   : msg,
               ),
             );
+
             setIsSending(false);
           },
+
+          // error
           (err) => {
+            console.error(err);
+
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.message_id === assistantId
-                  ? { ...msg, status: "failed" }
+                  ? {
+                      ...msg,
+                      status: "failed",
+                    }
                   : msg,
               ),
             );
+
             setIsSending(false);
-            console.error("stream error", err);
+          },
+
+          // tool start
+          (tool) => {
+            setToolEvents((prev) => [
+              ...prev,
+              {
+                id: crypto.randomUUID(),
+                tool,
+                status: "running",
+              },
+            ]);
+          },
+
+          // tool end
+          (tool) => {
+            setToolEvents((prev) =>
+              prev.map((event) =>
+                event.tool === tool
+                  ? {
+                      ...event,
+                      status: "completed",
+                    }
+                  : event,
+              ),
+            );
           },
         );
       } catch {
@@ -99,13 +153,6 @@ const ChatContainer = ({
       }
 
       // ✅ Fallback: if onDone never fired (backend closed without event:done)
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.message_id === assistantId && msg.status === "streaming"
-            ? { ...msg, status: "completed" }
-            : msg,
-        ),
-      );
     },
     [threadId],
   );
@@ -122,7 +169,24 @@ const ChatContainer = ({
       <div className="flex-1 overflow-y-auto p-6">
         <div className="space-y-4">
           {messages.map((message) => (
-            <MessageBox key={message.message_id} {...message} />
+            <React.Fragment key={message.message_id}>
+              {message.status === "streaming" && toolEvents.length > 0 && (
+                <div className="mb-2">
+                  {toolEvents.map((tool) => (
+                    <div
+                      key={tool.id}
+                      className="rounded-lg border bg-muted p-3 text-sm"
+                    >
+                      {tool.status === "running"
+                        ? `🔍 ${TOOL_LABELS[tool.tool] ?? tool.tool}`
+                        : `✅ ${TOOL_LABELS[tool.tool] ?? tool.tool}`}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <MessageBox {...message} />
+            </React.Fragment>
           ))}
           <div ref={bottomRef} />
         </div>

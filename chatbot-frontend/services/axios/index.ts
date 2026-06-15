@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/services/axios.ts
 
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const BASE_API_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -48,3 +50,31 @@ appApi.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+appApi.interceptors.request.use(async (config) => {
+  const accessToken = localStorage.getItem("accessToken");
+
+  const refreshToken = localStorage.getItem("refreshToken");
+
+  if (!accessToken) return config;
+
+  const decoded: any = jwtDecode(accessToken);
+
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  if (decoded.exp <= currentTime) {
+    const response = await appApi.post("/auth/refresh-token", {
+      refresh_token: refreshToken,
+    });
+
+    const newAccessToken = response.data.data.access_token;
+
+    localStorage.setItem("accessToken", newAccessToken);
+
+    config.headers.Authorization = `Bearer ${newAccessToken}`;
+  } else {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  return config;
+});

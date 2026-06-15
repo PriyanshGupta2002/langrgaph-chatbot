@@ -20,6 +20,7 @@ async def get_current_user(
         )
 
         user_id = payload.get("sub")
+        email = payload.get("email")
 
         if not user_id:
             raise HTTPException(
@@ -27,7 +28,7 @@ async def get_current_user(
                 detail="Invalid token",
             )
 
-        return {"user_id": int(user_id)}
+        return {"user_id": int(user_id), "email": email}
 
     except ExpiredSignatureError:
         raise HTTPException(

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FC, useMemo } from "react";
+import React, { FC } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -11,28 +11,27 @@ import { MessageResponse } from "@/types/thread.types";
 
 import "highlight.js/styles/github-dark.css";
 
-const MarkdownContent: FC<{ content: string; isStreaming: boolean }> =
-  React.memo(({ content, isStreaming }) => {
-    const rehypePlugins = useMemo(
-      () => (isStreaming ? [] : [rehypeHighlight]),
-      [isStreaming],
-    );
-
-    return (
-      <div
-        className={cn(
-          "prose prose-sm dark:prose-invert max-w-none",
-          "[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_table]:w-full",
-        )}
+const MarkdownContent: FC<{
+  content: string;
+  isStreaming: boolean;
+}> = ({ content, isStreaming }) => {
+  return (
+    <div
+      className={cn(
+        "prose prose-sm dark:prose-invert max-w-none",
+        "[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_table]:w-full",
+      )}
+    >
+      <Markdown
+        key={isStreaming ? "streaming" : "completed"}
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={isStreaming ? [] : [rehypeHighlight]}
       >
-        <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={rehypePlugins}>
-          {content}
-        </Markdown>
-      </div>
-    );
-  });
-
-MarkdownContent.displayName = "MarkdownContent";
+        {content}
+      </Markdown>
+    </div>
+  );
+};
 
 const MessageBox: FC<MessageResponse> = ({ content, role, status }) => {
   const isUser = role === "user";

@@ -8,9 +8,10 @@ from app.schema.message import MessageResponse
 from app.schema.chat import ChatResponse
 import app.ai.graph as graph_store
 import app.ai.checkpointer as checkpointer_store
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessageChunk
 from app.database.enums import message_status
 from app.database.enums import message_role
+import json
 
 
 class ChatService:
@@ -35,20 +36,35 @@ class ChatService:
         message: str,
     ):
         full_response = ""
-        async for event in graph_store.graph.astream(
+        async for event in graph_store.graph.astream_events(
             {"messages": [HumanMessage(content=message)]},
             config={"configurable": {"thread_id": thread_id}},
             version="v2",
-            stream_mode=["messages"],
         ):
+            if event["event"] == "on_tool_start":
+                yield (
+                    f"event: tool_start\n"
+                    f"data: {json.dumps({'tool': event['name'],'node': event.get('metadata', {}).get('langgraph_node')})}\n\n"
+                )
 
-            if event["type"] == "messages":
-                message_chunk, metadata = event["data"]
-                if message_chunk.content:
-                    token = message_chunk.content
-                    full_response += token
-                    yield f"data: {token}\n\n"
+            if event["event"] == "on_tool_end":
+                yield (f"event: tool_end\n" f"data: {json.dumps(
+                        {
+                            'tool': event['name'],
+                            'node': event.get('metadata', {}).get('langgraph_node')
+                            
+                            }
+                        
+                        )}\n\n")
 
+            elif event["event"] == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
+                if isinstance(chunk, AIMessageChunk):
+                    token = chunk.content
+                    if token:
+                        full_response += token
+                        yield f"data: {json.dumps(token)}\n\n"
+        print("full_response", full_response)
         await self._save_chat_to_db(
             db=db,
             message=full_response,

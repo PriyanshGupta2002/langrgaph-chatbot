@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-
+from jose import jwt
 from app.database.models.User import User
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, verify_password, create_access_token
+from app.core.config import settings
 
 
 async def create_user(
@@ -43,3 +44,17 @@ async def login_user(
         return None
 
     return user
+
+
+async def generate_access_token_from_refresh_token(refresh_token: str):
+    payload = jwt.decode(
+        refresh_token,
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM],
+    )
+    if payload.get("type") == "refresh":
+        access_token = create_access_token(
+            {"email": payload.get("email"), "sub": payload.get("sub"), "type": "access"}
+        )
+
+    return access_token

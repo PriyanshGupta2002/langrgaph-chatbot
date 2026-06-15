@@ -46,7 +46,8 @@ const SignUpForm = () => {
     // Do something with the form values.
     try {
       const user = await onLogin(data);
-      localStorage.setItem("accessToken", user.data.token);
+      localStorage.setItem("accessToken", user.data.access_token);
+      localStorage.setItem("refreshToken", user.data.refresh_token);
       router.push("/chat");
       return toast.success("Login Successfull");
     } catch (error: any) {
