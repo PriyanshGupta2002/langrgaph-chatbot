@@ -27,6 +27,7 @@ import { Button } from "../ui/button";
 import { useLogin } from "@/services/auth/auth.query";
 import { useRouter } from "next/navigation";
 import { Loader } from "lucide-react";
+import Link from "next/link";
 
 const SignUpForm = () => {
   const form = useForm<z.infer<typeof signinSchema>>({
@@ -151,7 +152,7 @@ const SignUpForm = () => {
             type="button"
             className="font-medium text-primary hover:underline"
           >
-            Create one
+            <Link href={"/sign-up"}>Create one</Link>
           </button>
         </p>
       </CardFooter>

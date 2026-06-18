@@ -1,10 +1,9 @@
 // proxy.ts
-
 import { NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_ROUTES = ["/", "/sign-in", "/sign-up"];
 
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const accessToken = request.cookies.get("accessToken")?.value;
@@ -18,7 +17,7 @@ export function proxy(request: NextRequest) {
 
   // Redirect authenticated users away from auth pages
   if (accessToken && (pathname === "/sign-in" || pathname === "/sign-up")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/chat", request.url));
   }
 
   return NextResponse.next();

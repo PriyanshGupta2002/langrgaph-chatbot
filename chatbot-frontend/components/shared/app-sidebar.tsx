@@ -16,10 +16,13 @@ import {
 import ThreadList from "../thread/thread-list";
 import { Button } from "../ui/button";
 import { usePathname, useRouter } from "next/navigation";
+import { useDocuments } from "@/services/document/document.query";
+import DocumentList from "../document/document-list";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: threadData } = useThreads();
   const { state, isMobile } = useSidebar();
+  const { data: documents } = useDocuments();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -60,6 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </TooltipContent>
           </Tooltip>
         </div>
+        <DocumentList documents={documents?.data || []} />
         <ThreadList
           threads={threadData?.data}
           activeThreadId={activeThreadId}

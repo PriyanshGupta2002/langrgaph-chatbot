@@ -5,6 +5,8 @@ from sqlalchemy import pool
 from app.database.models.Thread import Thread
 from app.database.models.Message import Messages
 from app.database.models.User import User
+from app.database.models.DocumentChunk import DocumentChunk
+from app.database.models.Documents import Documents
 from app.core.config import settings
 
 

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import auth_router, chat_router, thread_router
+from app.routes import auth_router, chat_router, thread_router, document_router
 
 from app.ai.graph_builder import build_graph
 import app.ai.graph as graph_store
@@ -17,7 +17,10 @@ app = FastAPI()
 @app.on_event("startup")
 async def startup():
     pool = AsyncConnectionPool(
-        conninfo=settings.CHECKPOINT_DB_URL, max_size=20, open=False
+        conninfo=settings.CHECKPOINT_DB_URL,
+        max_size=20,
+        open=False,
+        kwargs={"autocommit": True},  # Add this
     )
 
     await pool.open()
@@ -43,3 +46,4 @@ def read_root():
 app.include_router(auth_router.router)
 app.include_router(thread_router.router)
 app.include_router(chat_router.router)
+app.include_router(document_router.router)

@@ -47,7 +47,7 @@ const ThreadList: FC<ThreadListProps> = ({ threads, activeThreadId }) => {
                 onClick={() => router.push(`/thread/${thread.thread_id}`)}
                 className="flex-1"
               >
-                {thread.title}
+                <span className="p-3"> {thread.title}</span>
               </SidebarMenuButton>
               {hoveredId === thread.thread_id && (
                 <ThreadMenu
