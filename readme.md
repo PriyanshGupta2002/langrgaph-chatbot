@@ -1,34 +1,43 @@
-
-# LangGraph Chatbot
+# Agentic RAG Platform
 
 <p align="center">
-  <img src="./docs/B254E03D-4E0F-486E-ACCF-83E4154F3BE3.png" alt="LangGraph Chatbot Architecture" width="100%" />
+  <img src="./docs/architecture.png" alt="Agentic RAG Platform Architecture" width="100%" />
 </p>
 
 <p align="center">
-  <strong>Production-style AI Chat Application built with FastAPI, LangGraph, PostgreSQL and Next.js</strong>
+  <strong>Production-Style Agentic RAG Platform built with FastAPI, LangGraph, Celery, Redis, PostgreSQL and Next.js</strong>
 </p>
 
 <p align="center">
-  ChatGPT-style Threads • Persistent Memory • Tool Calling • SSE Streaming • Real-Time UI
+  AI Chat • Persistent Memory • Agentic RAG • Vector Search • Background Processing • Real-Time Streaming
 </p>
 
 ---
 
 ## Overview
 
-A full-stack AI chatbot built from scratch to understand how production conversational AI systems work under the hood.
+A production-style AI platform built from scratch to understand how modern AI systems work beyond simple LLM wrappers.
 
-Unlike simple LLM wrappers, this project includes:
+This project combines:
 
-- Thread-based conversations
-- Persistent chat history
-- LangGraph memory via checkpoints
-- Real-time token streaming
-- Tool execution tracking
-- JWT authentication
-- PostgreSQL persistence
-- Modern Next.js chat interface
+- Conversational AI
+- Agentic Workflows
+- Retrieval-Augmented Generation (RAG)
+- Document Intelligence
+- Background Processing
+- Persistent Memory
+- Real-Time Streaming
+
+Users can upload documents, track ingestion progress in real time, and ask questions grounded in their data.
+
+The system automatically:
+
+1. Uploads and stores documents
+2. Processes PDFs asynchronously
+3. Creates embeddings
+4. Stores vectors in PostgreSQL using pgvector
+5. Retrieves relevant context
+6. Generates grounded AI responses
 
 ---
 
@@ -40,8 +49,11 @@ Unlike simple LLM wrappers, this project includes:
 - LangGraph
 - OpenAI
 - PostgreSQL
-- Async SQLAlchemy
+- pgvector
+- SQLAlchemy
 - Alembic
+- Celery
+- Redis
 - JWT Authentication
 - Server-Sent Events (SSE)
 
@@ -51,47 +63,73 @@ Unlike simple LLM wrappers, this project includes:
 - React
 - TypeScript
 - TailwindCSS
+- ShadCN UI
+- React Query
 - React Markdown
-- Streaming UI
+
+### AI & Retrieval
+
+- OpenAI GPT Models
+- OpenAI Embeddings
+- LangGraph
+- Vector Similarity Search
+- Retrieval-Augmented Generation (RAG)
 
 ---
 
 ## Architecture
 
 ```text
-                    ┌─────────────────┐
-                    │     Next.js     │
-                    │  Streaming UI   │
-                    └────────┬────────┘
-                             │
-                             │ SSE
-                             ▼
-                    ┌─────────────────┐
-                    │     FastAPI     │
-                    │  Chat Backend   │
-                    └────────┬────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          ▼                  ▼                  ▼
+                    ┌────────────────────┐
+                    │      Next.js       │
+                    │      Frontend      │
+                    └─────────┬──────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │      FastAPI       │
+                    │    API Gateway     │
+                    └─────────┬──────────┘
+                              │
+           ┌──────────────────┼──────────────────┐
+           ▼                  ▼                  ▼
 
- ┌──────────────┐  ┌────────────────┐  ┌──────────────┐
- │ JWT Auth     │  │ LangGraph      │  │ PostgreSQL   │
- │ Middleware   │  │ StateGraph     │  │ Threads      │
- └──────────────┘  └───────┬────────┘  │ Messages     │
-                            │           └──────────────┘
-                            ▼
-                  ┌──────────────────┐
-                  │ Tool Execution   │
-                  │ Weather / Future │
-                  │ RAG / SQL Tools  │
-                  └─────────┬─────────┘
-                            │
-                            ▼
-                  ┌──────────────────┐
-                  │ Checkpointer     │
-                  │ Conversation Mem │
-                  └──────────────────┘
-````
+    ┌────────────┐    ┌──────────────┐    ┌────────────┐
+    │ LangGraph  │    │ PostgreSQL   │    │   Celery   │
+    │   Memory   │    │  Chat Data   │    │  Workers   │
+    └─────┬──────┘    └──────────────┘    └─────┬──────┘
+          │                                     │
+          ▼                                     ▼
+    ┌────────────┐                       ┌────────────┐
+    │Checkpoint  │                       │   Redis    │
+    │ Persistence│                       │   Queue    │
+    └────────────┘                       └────────────┘
+
+                         Document Pipeline
+
+                         PDF Upload
+                              │
+                              ▼
+                        Load Document
+                              │
+                              ▼
+                         Chunk Text
+                              │
+                              ▼
+                      Create Embeddings
+                              │
+                              ▼
+                   PostgreSQL + pgvector
+                              │
+                              ▼
+                      Similarity Search
+                              │
+                              ▼
+                      Context Retrieval
+                              │
+                              ▼
+                        LLM Response
+```
 
 ---
 
@@ -99,57 +137,83 @@ Unlike simple LLM wrappers, this project includes:
 
 ### Authentication
 
-* User Registration
-* Login
-* JWT Authentication
-* Protected Routes
-* Current User Dependency
+- User Registration
+- Login
+- JWT Authentication
+- Protected Routes
+- Current User Dependency
 
-### Chat Threads
+### AI Chat
 
-* ChatGPT-style Thread Management
-* Create Conversations
-* Fetch Conversation History
-* Thread-Based Context Retention
+- ChatGPT-style Conversations
+- Thread Management
+- Conversation Persistence
+- Context-Aware Responses
+- LangGraph Memory
+- Streaming Responses
+- Tool Calling
 
-### Messages
+### Agentic RAG
 
-* USER Messages
-* ASSISTANT Messages
-* TOOL Messages
-* SYSTEM Messages
+- PDF Uploads
+- Asynchronous Processing Pipeline
+- Document Chunking
+- Embedding Generation
+- Vector Storage
+- Semantic Search
+- Context Retrieval
+- Grounded Responses
 
-### LangGraph
+### Background Processing
 
-* StateGraph Integration
-* Checkpoint-Based Memory
-* Thread-Aware Context
-* OpenAI Integration
-* Tool Calling Support
+- Celery Workers
+- Redis Queues
+- Retry Mechanisms
+- Progress Tracking
+- Failure Recovery
+- Status Monitoring
 
 ### Real-Time Streaming
 
-* Server-Sent Events (SSE)
-* Token-by-Token Streaming
-* Optimistic UI Updates
-* Markdown Rendering During Streaming
-* Tool Execution Events
+- SSE Streaming
+- Token-by-Token Responses
+- Markdown Streaming
+- Tool Execution Events
+- Live Progress Updates
 
-### Tool Execution Tracking
+---
 
-```text
-🔍 Querying Database...
-✓ SQL Query Executed
-
-Assistant: You have 42 messages.
-```
-
-Supported event types:
+## RAG Pipeline
 
 ```text
-tool_start
-tool_end
-done
+User Uploads PDF
+        │
+        ▼
+Load Document
+        │
+        ▼
+Chunk Document
+        │
+        ▼
+Generate Embeddings
+        │
+        ▼
+Store Vectors (pgvector)
+        │
+        ▼
+User Query
+        │
+        ▼
+Query Embedding
+        │
+        ▼
+Similarity Search
+        │
+        ▼
+Retrieve Context
+        │
+        ▼
+LLM Response
 ```
 
 ---
@@ -159,9 +223,13 @@ done
 ```text
 users
 │
-└── threads
+├── threads
+│    │
+│    └── messages
+│
+└── documents
      │
-     └── messages
+     └── document_chunks
 ```
 
 ### Users
@@ -169,6 +237,7 @@ users
 ```text
 id
 name
+username
 email
 password
 created_at
@@ -177,7 +246,7 @@ created_at
 ### Threads
 
 ```text
-thread_id (UUID)
+thread_id
 title
 user_id
 created_at
@@ -187,80 +256,78 @@ updated_at
 ### Messages
 
 ```text
-message_id (UUID)
+message_id
 thread_id
-content
 role
+content
 status
 created_at
 updated_at
 ```
 
-### Enums
-
-#### MessageRole
+### Documents
 
 ```text
-USER
-ASSISTANT
-SYSTEM
-TOOL
+document_id
+user_id
+document_name
+document_url
+document_stage
+document_completion_rate
+created_at
+updated_at
 ```
 
-#### MessageStatus
+### Document Chunks
 
 ```text
-PENDING
-COMPLETED
-FAILED
+chunk_id
+document_id
+content
+embedding
+created_at
+updated_at
 ```
 
 ---
 
-## Conversation Memory
+## Current Capabilities
 
-Each thread acts as an independent conversation.
+✅ JWT Authentication
 
-```text
-Thread ID
-      │
-      ▼
-LangGraph Checkpointer
-      │
-      ▼
-Previous Messages
-      │
-      ▼
-Context-Aware Response
-```
+✅ Thread Management
 
-This allows conversations to continue naturally without manually sending the full history from the frontend.
+✅ Message Persistence
 
----
+✅ LangGraph Integration
 
-## Streaming Flow
+✅ Checkpoint Memory
 
-```text
-User Message
-      │
-      ▼
-POST /chat/stream
-      │
-      ▼
-LangGraph astream_events()
-      │
-      ▼
-Tool Events
-      │
-      ▼
-Token Streaming
-      │
-      ▼
-SSE Response
-      │
-      ▼
-Live UI Updates
-```
+✅ SSE Streaming
+
+✅ Markdown Rendering
+
+✅ Tool Calling
+
+✅ PDF Uploads
+
+✅ Celery Workers
+
+✅ Redis Queue
+
+✅ Document Chunking
+
+✅ OpenAI Embeddings
+
+✅ pgvector Integration
+
+✅ Similarity Search
+
+✅ Agentic RAG Pipeline
+
+✅ Real-Time Processing Status
+
+✅ Document Preview
 
 ---
 
@@ -268,15 +335,15 @@ Live UI Updates
 
 ### SSE Markdown Corruption
 
-One of the most interesting bugs encountered during development involved markdown tables rendering incorrectly while streaming.
+While implementing streaming markdown responses, markdown tables appeared broken even though the model output was correct.
 
-The issue was caused by streaming raw tokens directly through SSE:
+The issue:
 
 ```python
 yield f"data: {token}\n\n"
 ```
 
-Newline characters inside tokens were interpreted by the SSE protocol as message boundaries.
+Newline characters inside tokens were interpreted by SSE as message boundaries.
 
 The solution:
 
@@ -284,18 +351,19 @@ The solution:
 yield f"data: {json.dumps(token)}\n\n"
 ```
 
-And decoding on the frontend:
+Frontend:
 
 ```typescript
-const token = JSON.parse(data)
+const token = JSON.parse(data);
 ```
 
-This preserved markdown formatting during streaming and enabled proper rendering of:
+This preserved:
 
-* Tables
-* Lists
-* Code Blocks
-* Headings
+- Tables
+- Lists
+- Headings
+- Code Blocks
+- Markdown Formatting
 
 ---
 
@@ -309,11 +377,26 @@ cd chatbot-backend
 uv venv
 source .venv/bin/activate
 
-uv pip install -r requirements.txt
+uv sync
 
 alembic upgrade head
 
 uvicorn app.main:app --reload
+```
+
+### Start Redis
+
+```bash
+docker run -d \
+  --name redis \
+  -p 6379:6379 \
+  redis:latest
+```
+
+### Start Celery Worker
+
+```bash
+celery -A app.worker.celery_app worker --loglevel=info
 ```
 
 ---
@@ -330,49 +413,33 @@ npm run dev
 
 ---
 
-## API Endpoints
+## Roadmap
 
-| Method | Endpoint                | Description     |
-| ------ | ----------------------- | --------------- |
-| POST   | `/auth/register`        | Register User   |
-| POST   | `/auth/login`           | Login User      |
-| GET    | `/auth/me`              | Current User    |
-| POST   | `/threads`              | Create Thread   |
-| GET    | `/threads`              | List Threads    |
-| GET    | `/threads/{id}`         | Get Thread      |
-| GET    | `/messages/{thread_id}` | Thread Messages |
-| POST   | `/chat/stream`          | Streaming Chat  |
+### Completed
 
----
+- JWT Authentication
+- Thread Management
+- Message Persistence
+- LangGraph Integration
+- Checkpoint Memory
+- SSE Streaming
+- Markdown Rendering
+- Tool Events
+- Document Uploads
+- Celery Processing
+- Redis Queues
+- Agentic RAG Pipeline
 
-## Current Roadmap
+### Next
 
-### ✅ Completed
-
-* JWT Authentication
-* Thread Management
-* Message Persistence
-* LangGraph Integration
-* Checkpoint Memory
-* SSE Streaming
-* Markdown Rendering
-* Tool Events
-* Next.js Frontend
-
-### 🚧 In Progress
-
-* Document Uploads
-* RAG Pipeline
-* Retriever Tool
-* Vector Database Integration
-
-### 🔮 Planned
-
-* SQL Agent
-* Multi-Agent Workflows
-* Celery + Redis
-* Background Processing
-* Docker Deployment
+- Source Citations
+- Multi-Document Retrieval
+- Hybrid Search (BM25 + Vector)
+- Human-in-the-Loop Workflows
+- SQL Agent
+- Multi-Agent Systems
+- Docker Deployment
+- Kubernetes Support
 
 ---
 
@@ -382,8 +449,10 @@ npm run dev
 
 Software Engineer → AI Engineer
 
-* GitHub: https://github.com/PriyanshGupta2002
-* LinkedIn: https://linkedin.com/in/priyansh-gupta
+Building AI Systems in Public
+
+- GitHub: https://github.com/PriyanshGupta2002
+- LinkedIn: https://linkedin.com/in/priyansh-gupta
 
 ---
 
