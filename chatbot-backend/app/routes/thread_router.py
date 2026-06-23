@@ -89,11 +89,7 @@ async def get_thread_by_id(
     db: AsyncSession = Depends(get_db),
 ):
     messages = await message_service.get_thread_messages(db=db, thread_id=thread_id)
-    if not messages:
-        raise HTTPException(
-            status_code=404,
-            detail="Thread not found",
-        )
+
     message_data = [MessageResponse.model_validate(message) for message in messages]
 
     return ResponseModel(

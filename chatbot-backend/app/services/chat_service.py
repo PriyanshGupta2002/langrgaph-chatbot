@@ -33,12 +33,13 @@ class ChatService:
         self,
         db: AsyncSession,
         thread_id: str,
+        user_id: int,
         message: str,
     ):
         full_response = ""
         async for event in graph_store.graph.astream_events(
             {"messages": [HumanMessage(content=message)]},
-            config={"configurable": {"thread_id": thread_id}},
+            config={"configurable": {"thread_id": thread_id, "user_id": user_id}},
             version="v2",
         ):
             if event["event"] == "on_tool_start":
@@ -96,7 +97,7 @@ class ChatService:
 
         result = await graph_store.graph.ainvoke(
             {"messages": [HumanMessage(content=message)]},
-            config={"configurable": {"thread_id": thread_id}},
+            config={"configurable": {"thread_id": thread_id, "user_id": user_id}},
         )
         print(graph_store.graph)
         print(checkpointer_store.checkpointer)
@@ -140,6 +141,7 @@ class ChatService:
             db=db,
             thread_id=thread_id,
             message=message,
+            user_id=user_id,
         )
 
 

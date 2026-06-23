@@ -9,6 +9,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from app.core.config import settings
 
 from psycopg_pool import AsyncConnectionPool
+from langgraph.store.postgres.aio import AsyncPostgresStore
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 app = FastAPI()
@@ -26,7 +27,9 @@ async def startup():
     await pool.open()
     saver = AsyncPostgresSaver(pool)
     await saver.setup()
-    graph_store.graph = build_graph(saver)
+    store = AsyncPostgresStore(pool)
+    await store.setup()
+    graph_store.graph = build_graph(saver, store)
 
 
 app.add_middleware(
