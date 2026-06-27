@@ -25,7 +25,7 @@ import hashlib
 load_dotenv()
 
 llm = ChatOpenRouter(
-    model="qwen/qwen3.6-flash",
+    model="qwen/qwen3.7-plus",
     temperature=0.4,
     max_retries=2,
 )

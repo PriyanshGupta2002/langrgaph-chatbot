@@ -3,8 +3,8 @@ import app.database.models
 
 celery_app = Celery(
     "chatbot",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0",
+    broker="redis://redis:6379/0",
+    backend="redis://redis:6379/0",
 )
 
 celery_app.conf.task_serializer = "json"
