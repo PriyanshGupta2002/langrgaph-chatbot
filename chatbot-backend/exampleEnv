@@ -1,0 +1,49 @@
+# ==========================================
+# Authentication
+# ==========================================
+
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_MINUTES=1440
+
+# ==========================================
+# Database
+# ==========================================
+
+DATABASE_URL=postgresql+asyncpg://username:password@localhost:5432/chatbot
+ALEMBIC_DATABASE_URL=postgresql://username:password@localhost:5432/chatbot
+
+# ==========================================
+# LangGraph Checkpointer & Store
+# ==========================================
+
+CHECKPOINT_DB_URL=postgresql://username:password@localhost:5432/chatbot
+
+# ==========================================
+# LLM Providers
+# ==========================================
+
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENAI_API_KEY=your_openai_api_key
+
+# ==========================================
+# Tavily
+# ==========================================
+
+TAVILY_API_KEY=your_tavily_api_key
+
+# ==========================================
+# Weather Tool
+# ==========================================
+
+WEATHER_API_KEY=your_openweather_api_key
+
+# ==========================================
+# LangSmith
+# ==========================================
+
+LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=agentic-rag-platform
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
