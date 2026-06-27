@@ -3,10 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.DocumentChunk import DocumentChunk
 from app.services.embedding_service import embedding_service
+from langsmith import traceable
 
 
 class RetrievalService:
 
+    @traceable(
+        name="PGVector Search",
+        run_type="retriever",
+    )
     async def similarity_search(
         self,
         query: str,

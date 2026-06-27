@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  AI Chat • Persistent Memory • Agentic RAG • Vector Search • Background Processing • Real-Time Streaming
+AI Chat • Long-Term Memory • Corrective RAG (CRAG) • Hybrid Retrieval • Query Rewriting • Knowledge Strip Refinement • Real-Time Streaming
 </p>
 
 ---
@@ -22,22 +22,31 @@ This project combines:
 
 - Conversational AI
 - Agentic Workflows
-- Retrieval-Augmented Generation (RAG)
+- Long-Term Memory
+- Thread Memory
+- Corrective RAG (CRAG)
+- Hybrid Retrieval
+- Query Rewriting
+- Knowledge Strip Refinement
 - Document Intelligence
 - Background Processing
-- Persistent Memory
+- LangSmith Observability
 - Real-Time Streaming
-
+  
 Users can upload documents, track ingestion progress in real time, and ask questions grounded in their data.
 
 The system automatically:
 
-1. Uploads and stores documents
-2. Processes PDFs asynchronously
-3. Creates embeddings
-4. Stores vectors in PostgreSQL using pgvector
-5. Retrieves relevant context
-6. Generates grounded AI responses
+1. Stores long-term user memories across conversations
+2. Uploads and processes documents asynchronously
+3. Chunks and embeds documents
+4. Stores embeddings in PostgreSQL using pgvector
+5. Retrieves the Top-K candidate chunks
+6. Evaluates each retrieved chunk using an LLM
+7. Performs Knowledge Strip Refinement
+8. Rewrites ambiguous queries when needed
+9. Falls back to web search if retrieval confidence is low
+10. Generates grounded responses using refined context
 
 ---
 
@@ -56,6 +65,16 @@ The system automatically:
 - Redis
 - JWT Authentication
 - Server-Sent Events (SSE)
+- OpenRouter
+- GPT-5
+- Gemini
+- LangGraph
+- PGVector
+- Tavily Search
+- Corrective RAG (CRAG)
+- Query Rewriting
+- Knowledge Strip Refinement
+- LangSmith
 
 ### Frontend
 
@@ -105,30 +124,44 @@ The system automatically:
     │ Persistence│                       │   Queue    │
     └────────────┘                       └────────────┘
 
-                         Document Pipeline
+                            User Query
+                                │
+                                ▼
+                       LangGraph Agent
+                                │
+               ┌────────────────┴─────────────────┐
+               ▼                                  ▼
+        Thread Memory                     Long-Term Memory
+       (Checkpointer)                  (LangGraph Store)
+               │                                  │
+               └────────────────┬─────────────────┘
+                                ▼
+                        Corrective RAG
+                                │
+                                ▼
+                    Retrieve Top-K Chunks
+                                │
+                                ▼
+                   LLM Document Evaluation
+                                │
+          ┌─────────────────────┼────────────────────┐
+          ▼                     ▼                    ▼
 
-                         PDF Upload
-                              │
-                              ▼
-                        Load Document
-                              │
-                              ▼
-                         Chunk Text
-                              │
-                              ▼
-                      Create Embeddings
-                              │
-                              ▼
-                   PostgreSQL + pgvector
-                              │
-                              ▼
-                      Similarity Search
-                              │
-                              ▼
-                      Context Retrieval
-                              │
-                              ▼
-                        LLM Response
+     High Score          Medium Score          Low Score
+
+          │                     │                    │
+          ▼                     ▼                    ▼
+
+ Knowledge Strip        Rewrite Query       Rewrite Query
+ Refinement                   │                    │
+          │                   ▼                    ▼
+          │             Tavily Search        Tavily Search
+          │                   │                    │
+          └──────────────┬────┴────────────────────┘
+                         ▼
+              Knowledge Strip Refinement
+                         ▼
+                 Final Grounded Response
 ```
 
 ---
@@ -143,6 +176,22 @@ The system automatically:
 - Protected Routes
 - Current User Dependency
 
+### Memory
+
+#### Thread Memory
+
+- LangGraph Checkpointer
+- Conversation Context
+- Stateful Conversations
+
+#### Long-Term Memory
+
+- LangGraph Store
+- PostgreSQL
+- Cross-thread Memory
+- Automatic Memory Extraction
+- Personalized Responses
+  
 ### AI Chat
 
 - ChatGPT-style Conversations
@@ -153,16 +202,18 @@ The system automatically:
 - Streaming Responses
 - Tool Calling
 
-### Agentic RAG
+### Corrective RAG (CRAG)
 
 - PDF Uploads
-- Asynchronous Processing Pipeline
-- Document Chunking
-- Embedding Generation
-- Vector Storage
 - Semantic Search
-- Context Retrieval
-- Grounded Responses
+- Top-K Retrieval
+- LLM-based Document Evaluation
+- Query Rewriting
+- Hybrid Retrieval
+- Tavily Web Search
+- Knowledge Strip Refinement
+- Context Refinement
+- Grounded Generation
 
 ### Background Processing
 
@@ -186,34 +237,52 @@ The system automatically:
 ## RAG Pipeline
 
 ```text
-User Uploads PDF
-        │
-        ▼
-Load Document
-        │
-        ▼
-Chunk Document
-        │
-        ▼
-Generate Embeddings
-        │
-        ▼
-Store Vectors (pgvector)
-        │
-        ▼
 User Query
-        │
-        ▼
-Query Embedding
-        │
-        ▼
-Similarity Search
-        │
-        ▼
-Retrieve Context
-        │
-        ▼
-LLM Response
+      │
+      ▼
+
+Vector Search
+
+      │
+      ▼
+
+Retrieve Top-K Chunks
+
+      │
+      ▼
+
+LLM Document Evaluation
+
+      │
+      ├──────────────┬──────────────┐
+      ▼              ▼              ▼
+
+High           Medium          Low
+
+      │              │              │
+
+      ▼              ▼              ▼
+
+Knowledge     Rewrite Query   Rewrite Query
+Refinement          │              │
+                    ▼              ▼
+
+              Tavily Search   Tavily Search
+                    │
+                    ▼
+
+       Merge Local + Web Context
+
+                    │
+                    ▼
+
+      Knowledge Strip Refinement
+
+                    │
+                    ▼
+
+           Grounded Response
+
 ```
 
 ---
@@ -297,41 +366,76 @@ updated_at
 
 ✅ Thread Management
 
-✅ Message Persistence
+✅ Thread Memory
 
-✅ LangGraph Integration
+✅ Long-Term Memory
+
+✅ LangGraph Store
 
 ✅ Checkpoint Memory
 
-✅ SSE Streaming
+✅ Corrective RAG (CRAG)
 
-✅ Markdown Rendering
+✅ Query Rewriting
+
+✅ Hybrid Retrieval
+
+✅ Knowledge Strip Refinement
+
+✅ Tavily Web Search
+
+✅ Parallel Document Evaluation
+
+✅ PDF Uploads
+
+✅ Vector Search
 
 ✅ Tool Calling
 
-✅ PDF Uploads
+✅ SSE Streaming
+
+✅ LangSmith Tracing
 
 ✅ Celery Workers
 
 ✅ Redis Queue
-
-✅ Document Chunking
-
-✅ OpenAI Embeddings
-
-✅ pgvector Integration
-
-✅ Similarity Search
-
-✅ Agentic RAG Pipeline
-
-✅ Real-Time Processing Status
 
 ✅ Document Preview
 
 ---
 
 ## Engineering Challenges Solved
+
+### Long-Term Memory
+
+Implemented persistent cross-thread memory using LangGraph Store.
+
+Every user message passes through a dedicated memory extraction pipeline.
+
+The memory agent decides:
+
+- Should this be remembered?
+- Is it new?
+- Does it already exist?
+- Should it be stored?
+
+Only important user information is persisted.
+
+
+### Corrective RAG (CRAG)
+
+Instead of trusting retrieved chunks blindly, every retrieved document is first evaluated by an LLM.
+
+Depending on the confidence score, the pipeline:
+
+- Uses local documents directly
+- Rewrites ambiguous queries
+- Searches the web
+- Performs Knowledge Strip Refinement
+- Generates a grounded response
+
+This significantly reduces hallucinations while improving retrieval quality.
+
 
 ### SSE Markdown Corruption
 
@@ -419,27 +523,33 @@ npm run dev
 
 - JWT Authentication
 - Thread Management
-- Message Persistence
-- LangGraph Integration
-- Checkpoint Memory
+- Thread Memory
+- Long-Term Memory
+- LangGraph Store
+- Corrective RAG
+- Query Rewriting
+- Knowledge Strip Refinement
+- Hybrid Retrieval
+- LangSmith Tracing
 - SSE Streaming
-- Markdown Rendering
-- Tool Events
-- Document Uploads
+- Tool Calling
 - Celery Processing
 - Redis Queues
-- Agentic RAG Pipeline
+- Agentic RAG
 
 ### Next
 
-- Source Citations
-- Multi-Document Retrieval
+- Conversation Summarization
+- Context Trimming
+- Semantic Memory Retrieval
 - Hybrid Search (BM25 + Vector)
-- Human-in-the-Loop Workflows
 - SQL Agent
 - Multi-Agent Systems
+- Human-in-the-Loop
+- Deep Research Agent
+- MCP Integration
 - Docker Deployment
-- Kubernetes Support
+- Kubernetes
 
 ---
 

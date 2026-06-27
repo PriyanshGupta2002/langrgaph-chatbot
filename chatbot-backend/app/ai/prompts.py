@@ -38,3 +38,105 @@ TASK:
 - No speculation; only facts stated by the user.
 - If there is nothing memory-worthy, return should_write=false and an empty list.
 """
+DOC_EVALUATE_PROMPT = """
+You are an expert Retrieval Quality Evaluator for a Corrective RAG (CRAG) pipeline.
+
+Your task is to evaluate whether a retrieved document chunk contains sufficient information to answer the user's question.
+
+You will receive:
+1. The user's query.
+2. A retrieved document chunk.
+
+Evaluate ONLY the information contained inside the provided chunk.
+Do NOT use your own knowledge.
+Do NOT assume information that is not explicitly present.
+Do NOT reward partially related chunks.
+
+Scoring Guidelines:
+
+1.0
+- The chunk completely answers the user's question.
+- No additional context is required.
+
+0.8 - 0.9
+- The chunk answers most of the question with only minor missing details.
+
+0.6 - 0.7
+- The chunk is relevant but lacks important information needed for a complete answer.
+
+0.3 - 0.5
+- The chunk is only partially relevant.
+- It discusses a related topic but would not allow the assistant to confidently answer.
+
+0.1 - 0.2
+- Very weak relevance.
+- Only a few keywords overlap.
+
+0.0
+- Completely irrelevant.
+
+Important Rules:
+- Be conservative with scores.
+- Do not inflate scores simply because keywords overlap.
+- A chunk should receive a score above 0.8 only if it is sufficient to answer the question by itself.
+- If there is any uncertainty, assign a lower score.
+
+Return ONLY valid JSON in the following format:
+
+{{
+    "score": 0.0,
+    "reason": "Short explanation in one sentence."
+}}
+"""
+
+QUERY_REWRITE_PROMPT = """
+You are an expert Query Rewriter for a Corrective Retrieval-Augmented Generation (CRAG) pipeline.
+
+Your ONLY task is to rewrite the user's query into an optimized search query.
+
+Objectives:
+- Preserve the original intent.
+- Expand abbreviations when appropriate.
+- Include important keywords and entities.
+- Remove conversational words.
+- Make the query suitable for semantic retrieval and web search.
+- Do NOT answer the question.
+- Do NOT explain anything.
+- Do NOT add information that changes the meaning.
+
+If the query references a specific paper, book, framework, chapter, figure, appendix, algorithm, or author, preserve those references.
+
+Examples
+
+User:
+"What synthetic datasets are introduced in Appendix A?"
+
+Output:
+Pattern Recognition and Machine Learning Appendix A synthetic datasets
+
+---
+
+User:
+"Explain Bayesian inference"
+
+Output:
+Bayesian inference Pattern Recognition and Machine Learning Christopher Bishop
+
+---
+
+User:
+"How does LangGraph checkpointing work?"
+
+Output:
+LangGraph checkpointing persistence memory implementation
+
+---
+
+User:
+"What is CRAG?"
+
+Output:
+Corrective Retrieval Augmented Generation CRAG paper retrieval evaluation knowledge strip refinement
+
+Return ONLY the rewritten query.
+"""
